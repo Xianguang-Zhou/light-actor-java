@@ -7,20 +7,21 @@
  */
 package org.zxg.concurrent.actor;
 
-import java.util.concurrent.Executor;
-
 /**
  * @author <a href="mailto:xianguang.zhou@outlook.com">Xianguang Zhou</a>
  */
-final class ActorScheduler {
+final class Task implements Runnable {
 
-	private Executor executor;
+	private Actor actor;
+	private Object message;
 
-	public ActorScheduler(Executor executor) {
-		this.executor = executor;
+	public Task(Actor actor, Object message) {
+		this.actor = actor;
+		this.message = message;
 	}
 
-	public void send(Actor actor, Object message) {
-		this.executor.execute(new Task(actor, message));
+	@Override
+	public void run() {
+		this.actor.receive(this.message);
 	}
 }

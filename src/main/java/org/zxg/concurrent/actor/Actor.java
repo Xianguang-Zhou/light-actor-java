@@ -7,28 +7,21 @@
  */
 package org.zxg.concurrent.actor;
 
-import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
-
 /**
  * @author <a href="mailto:xianguang.zhou@outlook.com">Xianguang Zhou</a>
  */
 public abstract class Actor {
 
-	Queue<Object> mailbox;
+	private ActorScheduler scheduler;
 
 	protected Actor(ActorGroup group) {
-		this.mailbox = new ConcurrentLinkedQueue<Object>();
-		group.nextScheduler().add(this);
+		scheduler = group.nextScheduler();
 	}
 
-	protected abstract boolean receive(Object message);
+	protected abstract void receive(Object message);
 
 	public final void send(Object message) {
-		this.mailbox.offer(message);
-	}
-
-	public final void close() {
-		this.send(ActorScheduler.closeMessage);
+		this.scheduler.send(this, message);
 	}
 }
+
