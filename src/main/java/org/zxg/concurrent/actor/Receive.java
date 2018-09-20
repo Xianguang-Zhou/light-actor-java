@@ -7,20 +7,17 @@
  */
 package org.zxg.concurrent.actor;
 
-import java.util.concurrent.Executor;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * @author <a href="mailto:xianguang.zhou@outlook.com">Xianguang Zhou</a>
  */
-final class ActorScheduler {
+public final class Receive {
 
-	private Executor executor;
+	List<ReceiveRule> receiveRules;
 
-	public ActorScheduler(Executor executor) {
-		this.executor = executor;
-	}
-
-	public void send(Actor actor, Object message) {
-		this.executor.execute(new Task(actor, message));
+	Receive() {
+		receiveRules = new LinkedList<ReceiveRule>();
 	}
 }

@@ -15,20 +15,20 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class ActorGroup {
 
-	private ActorScheduler[] schedulers;
+	private Scheduler[] schedulers;
 	private AtomicInteger schedulerIndex = new AtomicInteger();
 	private int schedulersSize;
 
 	public ActorGroup(Iterable<? extends Executor> executors, int executorsSize) {
-		this.schedulers = new ActorScheduler[executorsSize];
+		this.schedulers = new Scheduler[executorsSize];
 		int index = 0;
 		for (Executor executor : executors) {
-			schedulers[index++] = new ActorScheduler(executor);
+			schedulers[index++] = new Scheduler(executor);
 		}
 		this.schedulersSize = executorsSize;
 	}
 
-	final ActorScheduler nextScheduler() {
+	final Scheduler nextScheduler() {
 		return schedulers[Math.abs(schedulerIndex.getAndIncrement() % schedulersSize)];
 	}
 }
