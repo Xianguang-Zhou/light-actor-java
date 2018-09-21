@@ -9,6 +9,7 @@ package org.zxg.concurrent.actor;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author <a href="mailto:xianguang.zhou@outlook.com">Xianguang Zhou</a>
@@ -16,6 +17,10 @@ import java.util.List;
 public final class Receive {
 
 	List<ReceiveRule> receiveRules;
+
+	long afterTime;
+	TimeUnit afterTimeUnit;
+	Runnable afterHook;
 
 	Receive() {
 		receiveRules = new LinkedList<ReceiveRule>();

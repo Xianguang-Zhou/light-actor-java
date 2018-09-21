@@ -7,6 +7,7 @@
  */
 package org.zxg.concurrent.actor;
 
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
@@ -31,8 +32,15 @@ public final class ReceiveBuilder {
 		return this;
 	}
 
+	public ReceiveBuilder after(long time, TimeUnit unit, Runnable hook) {
+		receive.afterTime = time;
+		receive.afterTimeUnit = unit;
+		receive.afterHook = hook;
+		return this;
+	}
+
 	public Receive build() throws InvalidReceiveException {
-		if (receive.receiveRules.isEmpty()) {
+		if (receive.receiveRules.isEmpty() && receive.afterHook == null) {
 			throw new InvalidReceiveException();
 		}
 		return receive;

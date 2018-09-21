@@ -7,7 +7,7 @@
  */
 package org.zxg.concurrent.actor;
 
-import java.util.concurrent.Executor;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -19,10 +19,10 @@ public class ActorGroup {
 	private AtomicInteger schedulerIndex = new AtomicInteger();
 	private int schedulersSize;
 
-	public ActorGroup(Iterable<? extends Executor> executors, int executorsSize) {
+	public ActorGroup(Iterable<? extends ScheduledExecutorService> executors, int executorsSize) {
 		this.schedulers = new Scheduler[executorsSize];
 		int index = 0;
-		for (Executor executor : executors) {
+		for (ScheduledExecutorService executor : executors) {
 			schedulers[index++] = new Scheduler(executor);
 		}
 		this.schedulersSize = executorsSize;

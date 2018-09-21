@@ -9,39 +9,100 @@ package org.zxg.concurrent.actor;
 
 import java.util.LinkedList;
 import java.util.Queue;
+import java.util.concurrent.ScheduledFuture;
 
 /**
  * @author <a href="mailto:xianguang.zhou@outlook.com">Xianguang Zhou</a>
  */
 public abstract class Actor {
 
-	private Receive receive;
+	Receive receive;
 	private Scheduler scheduler;
 	private Queue<Object> savedMessages;
+	private ScheduledFuture<?> afterFuture;
+	private volatile boolean isStoped = false;
 
 	protected Actor(ActorGroup group) {
 		this.savedMessages = new LinkedList<Object>();
 		this.receive = createReceive();
 		this.scheduler = group.nextScheduler();
+		this.scheduler.start(this);
 	}
 
 	protected abstract Receive createReceive();
 
+	protected void preStart() {
+	}
+
+	protected void postStop() {
+	}
+
 	public final void send(Object message) {
+		if (isStoped) {
+			return;
+		}
 		this.scheduler.send(this, message);
 	}
 
+	public final void close() {
+		if (isStoped) {
+			return;
+		}
+		this.scheduler.stop(this);
+	}
+
+	public final boolean isStoped() {
+		return isStoped;
+	}
+
+	final void stop() {
+		if (isStoped) {
+			return;
+		}
+		isStoped = true;
+		postStop();
+	}
+
+	final void start() {
+		preStart();
+		if (receive.afterHook != null) {
+			this.afterFuture = this.scheduler.after(this);
+		}
+	}
+
+	final void after() {
+		if (isStoped) {
+			return;
+		}
+		receive.afterHook.run();
+		sendSavedMessages();
+		this.afterFuture = this.scheduler.after(this);
+	}
+
 	final void receive(Object message) {
+		if (isStoped) {
+			return;
+		}
 		for (ReceiveRule rule : receive.receiveRules) {
 			if (rule.matcher.test(message)) {
-				Object savedMessage;
-				while ((savedMessage = savedMessages.poll()) != null) {
-					send(savedMessage);
+				sendSavedMessages();
+
+				if (this.afterFuture != null) {
+					this.afterFuture.cancel(false);
+					this.afterFuture = this.scheduler.after(this);
 				}
+
 				rule.receiver.accept(message);
 				return;
 			}
 		}
 		savedMessages.offer(message);
+	}
+
+	private final void sendSavedMessages() {
+		Object savedMessage;
+		while ((savedMessage = savedMessages.poll()) != null) {
+			send(savedMessage);
+		}
 	}
 }
