@@ -11,6 +11,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
+import org.zxg.concurrent.actor.exception.InvalidReceiveException;
+
 /**
  * @author <a href="mailto:xianguang.zhou@outlook.com">Xianguang Zhou</a>
  */

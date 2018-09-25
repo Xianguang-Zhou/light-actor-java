@@ -5,11 +5,12 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-package org.zxg.concurrent.actor;
+package org.zxg.concurrent.actor.exception;
 
 /**
  * @author <a href="mailto:xianguang.zhou@outlook.com">Xianguang Zhou</a>
  */
-@SuppressWarnings("serial")
-public class InvalidReceiveException extends RuntimeException {
+public class InvalidActorNameException extends ActorException {
+
+	private static final long serialVersionUID = 1L;
 }

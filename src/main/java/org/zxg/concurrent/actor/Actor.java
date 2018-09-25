@@ -10,6 +10,7 @@ package org.zxg.concurrent.actor;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * @author <a href="mailto:xianguang.zhou@outlook.com">Xianguang Zhou</a>
@@ -21,6 +22,7 @@ public abstract class Actor {
 	private Queue<Object> savedMessages;
 	private ScheduledFuture<?> afterFuture;
 	private volatile boolean isStoped = false;
+	AtomicReference<String> nameRef = new AtomicReference<>();
 
 	protected Actor(ActorGroup group) {
 		this.savedMessages = new LinkedList<Object>();
@@ -60,6 +62,18 @@ public abstract class Actor {
 			return;
 		}
 		isStoped = true;
+
+		String name = nameRef.getAndSet(null);
+		if (name != null) {
+			scheduler.group.registry.computeIfPresent(name, (String nameKey, Actor actorValue) -> {
+				if (actorValue == this) {
+					return null;
+				} else {
+					return actorValue;
+				}
+			});
+		}
+
 		postStop();
 	}
 

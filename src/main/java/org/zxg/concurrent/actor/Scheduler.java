@@ -15,9 +15,11 @@ import java.util.concurrent.ScheduledFuture;
  */
 final class Scheduler {
 
+	ActorGroup group;
 	private ScheduledExecutorService executor;
 
-	public Scheduler(ScheduledExecutorService executor) {
+	public Scheduler(ActorGroup group, ScheduledExecutorService executor) {
+		this.group = group;
 		this.executor = executor;
 	}
 
