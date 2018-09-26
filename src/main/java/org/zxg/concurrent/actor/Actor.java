@@ -57,14 +57,23 @@ public abstract class Actor {
 		return isStoped;
 	}
 
+	public final ActorGroup getGroup() {
+		return scheduler.group;
+	}
+
+	public final String getName() {
+		return nameRef.get();
+	}
+
 	final void stop() {
 		if (isStoped) {
 			return;
 		}
 		isStoped = true;
 
-		String name = nameRef.getAndSet(null);
+		String name = nameRef.get();
 		if (name != null) {
+			nameRef.set(null);
 			scheduler.group.registry.computeIfPresent(name, (String nameKey, Actor actorValue) -> {
 				if (actorValue == this) {
 					return null;
