@@ -5,13 +5,13 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-package org.zxg.concurrent.actor;
+package org.zxg.concurrent.actor.core;
 
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
-import org.zxg.concurrent.actor.exception.InvalidReceiveException;
+import org.zxg.concurrent.actor.core.exception.InvalidReceiveException;
 
 /**
  * @author <a href="mailto:xianguang.zhou@outlook.com">Xianguang Zhou</a>

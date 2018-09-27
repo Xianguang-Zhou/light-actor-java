@@ -5,12 +5,24 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-package org.zxg.concurrent.actor.exception;
+package org.zxg.concurrent.actor.core;
+
+import java.util.LinkedList;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author <a href="mailto:xianguang.zhou@outlook.com">Xianguang Zhou</a>
  */
-public class InvalidReceiveException extends ActorException {
+public final class Receive {
 
-	private static final long serialVersionUID = 1L;
+	List<ReceiveRule> receiveRules;
+
+	long afterTime;
+	TimeUnit afterTimeUnit;
+	Runnable afterHook;
+
+	Receive() {
+		receiveRules = new LinkedList<ReceiveRule>();
+	}
 }

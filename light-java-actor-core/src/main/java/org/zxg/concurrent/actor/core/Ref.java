@@ -5,23 +5,19 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-package org.zxg.concurrent.actor;
+package org.zxg.concurrent.actor.core;
 
 /**
  * @author <a href="mailto:xianguang.zhou@outlook.com">Xianguang Zhou</a>
  */
-final class Task implements Runnable {
+class Ref<T> {
 
-	private Actor actor;
-	private Object message;
+	public T value;
 
-	public Task(Actor actor, Object message) {
-		this.actor = actor;
-		this.message = message;
+	public Ref() {
 	}
 
-	@Override
-	public void run() {
-		this.actor.receive(this.message);
+	public Ref(T value) {
+		this.value = value;
 	}
 }

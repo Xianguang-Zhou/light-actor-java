@@ -5,6 +5,7 @@
 	<groupId>org.zxg.concurrent</groupId>
 	<artifactId>light-java-actor</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
+	<packaging>pom</packaging>
 
 	<url>https://github.com/Xianguang-Zhou/light-java-actor</url>
 
@@ -27,5 +28,10 @@
 		<maven.compiler.target>1.8</maven.compiler.target>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
+
+	<modules>
+		<module>light-java-actor-core</module>
+		<module>light-java-actor-netty</module>
+	</modules>
 </project>
 

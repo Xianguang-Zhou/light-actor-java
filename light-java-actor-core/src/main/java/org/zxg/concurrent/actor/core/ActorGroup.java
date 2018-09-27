@@ -5,18 +5,18 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-package org.zxg.concurrent.actor;
+package org.zxg.concurrent.actor.core;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.zxg.concurrent.actor.exception.ActorException;
-import org.zxg.concurrent.actor.exception.ActorRegisteredException;
-import org.zxg.concurrent.actor.exception.ActorStopedException;
-import org.zxg.concurrent.actor.exception.InvalidActorNameException;
-import org.zxg.concurrent.actor.exception.RepeatedActorNameException;
+import org.zxg.concurrent.actor.core.exception.ActorException;
+import org.zxg.concurrent.actor.core.exception.ActorRegisteredException;
+import org.zxg.concurrent.actor.core.exception.ActorStopedException;
+import org.zxg.concurrent.actor.core.exception.InvalidActorNameException;
+import org.zxg.concurrent.actor.core.exception.RepeatedActorNameException;
 
 /**
  * @author <a href="mailto:xianguang.zhou@outlook.com">Xianguang Zhou</a>

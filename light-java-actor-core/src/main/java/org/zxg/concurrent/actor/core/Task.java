@@ -5,12 +5,23 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-package org.zxg.concurrent.actor.exception;
+package org.zxg.concurrent.actor.core;
 
 /**
  * @author <a href="mailto:xianguang.zhou@outlook.com">Xianguang Zhou</a>
  */
-public class ActorRegisteredException extends ActorException {
+final class Task implements Runnable {
 
-	private static final long serialVersionUID = 1L;
+	private Actor actor;
+	private Object message;
+
+	public Task(Actor actor, Object message) {
+		this.actor = actor;
+		this.message = message;
+	}
+
+	@Override
+	public void run() {
+		this.actor.receive(this.message);
+	}
 }

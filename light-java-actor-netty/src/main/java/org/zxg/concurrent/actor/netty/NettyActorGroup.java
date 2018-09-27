@@ -5,19 +5,18 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-package org.zxg.concurrent.actor;
+package org.zxg.concurrent.actor.netty;
+
+import org.zxg.concurrent.actor.core.ActorGroup;
+
+import io.netty.util.concurrent.MultithreadEventExecutorGroup;
 
 /**
  * @author <a href="mailto:xianguang.zhou@outlook.com">Xianguang Zhou</a>
  */
-class Ref<T> {
+public class NettyActorGroup extends ActorGroup {
 
-	public T value;
-
-	public Ref() {
-	}
-
-	public Ref(T value) {
-		this.value = value;
+	public NettyActorGroup(MultithreadEventExecutorGroup executorGroup) {
+		super(executorGroup, executorGroup.executorCount());
 	}
 }
