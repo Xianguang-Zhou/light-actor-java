@@ -9,6 +9,8 @@ package org.zxg.concurrent.actor.core;
 
 import java.util.LinkedList;
 import java.util.Queue;
+import java.util.Set;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -23,12 +25,14 @@ public abstract class Actor {
 	private ScheduledFuture<?> afterFuture;
 	private volatile boolean isStoped = false;
 	AtomicReference<String> nameRef = new AtomicReference<>();
+	private Set<Actor> links;
+	private volatile boolean isTrapStop = false;
 
 	protected Actor(ActorGroup group) {
 		this.savedMessages = new LinkedList<Object>();
+		this.links = new ConcurrentSkipListSet<Actor>();
 		this.receive = createReceive();
 		this.scheduler = group.nextScheduler();
-		this.scheduler.start(this);
 	}
 
 	protected abstract Receive createReceive();
@@ -36,7 +40,11 @@ public abstract class Actor {
 	protected void preStart() {
 	}
 
-	protected void postStop() {
+	protected void postStop(Object reason) {
+	}
+
+	public final void start() {
+		this.scheduler.start(this);
 	}
 
 	public final void send(Object message) {
@@ -46,15 +54,42 @@ public abstract class Actor {
 		this.scheduler.send(this, message);
 	}
 
-	public final void close() {
+	public final void stop(Object reason) {
 		if (isStoped) {
 			return;
 		}
-		this.scheduler.stop(this);
+		this.scheduler.stop(this, reason);
 	}
 
 	public final boolean isStoped() {
 		return isStoped;
+	}
+
+	public final void link(Actor actor) {
+		if (isStoped || actor.isStoped) {
+			return;
+		}
+		actor.links.add(this);
+		this.links.add(actor);
+	}
+
+	public final void unlink(Actor actor) {
+		if (isStoped || actor.isStoped) {
+			return;
+		}
+		actor.links.remove(this);
+		this.links.remove(actor);
+	}
+
+	public final void setTrapStop(boolean trapStop) {
+		if (isStoped) {
+			return;
+		}
+		this.isTrapStop = trapStop;
+	}
+
+	public final boolean isTrapStop() {
+		return this.isTrapStop;
 	}
 
 	public final ActorGroup getGroup() {
@@ -62,10 +97,13 @@ public abstract class Actor {
 	}
 
 	public final String getName() {
+		if (isStoped) {
+			return null;
+		}
 		return nameRef.get();
 	}
 
-	final void stop() {
+	final void onStop(Object reason) {
 		if (isStoped) {
 			return;
 		}
@@ -83,17 +121,25 @@ public abstract class Actor {
 			});
 		}
 
-		postStop();
+		postStop(reason);
+
+		for (Actor actor : links) {
+			if (actor.isTrapStop) {
+				actor.send(new ExitMessage(this, reason));
+			} else {
+				actor.stop(reason);
+			}
+		}
 	}
 
-	final void start() {
+	final void onStart() {
 		preStart();
 		if (receive.afterHook != null) {
 			this.afterFuture = this.scheduler.after(this);
 		}
 	}
 
-	final void after() {
+	final void onAfter() {
 		if (isStoped) {
 			return;
 		}
@@ -102,7 +148,7 @@ public abstract class Actor {
 		this.afterFuture = this.scheduler.after(this);
 	}
 
-	final void receive(Object message) {
+	final void onReceive(Object message) {
 		if (isStoped) {
 			return;
 		}

@@ -24,18 +24,18 @@ final class Scheduler {
 	}
 
 	public void send(Actor actor, Object message) {
-		this.executor.execute(new Task(actor, message));
+		this.executor.execute(new ReceiveTask(actor, message));
 	}
 
 	public ScheduledFuture<?> after(Actor actor) {
-		return this.executor.schedule(actor::after, actor.receive.afterTime, actor.receive.afterTimeUnit);
+		return this.executor.schedule(actor::onAfter, actor.receive.afterTime, actor.receive.afterTimeUnit);
 	}
 
 	public void start(Actor actor) {
-		this.executor.execute(actor::start);
+		this.executor.execute(actor::onStart);
 	}
 
-	public void stop(Actor actor) {
-		this.executor.execute(actor::stop);
+	public void stop(Actor actor, Object reason) {
+		this.executor.execute(new StopTask(actor, reason));
 	}
 }

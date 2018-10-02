@@ -10,18 +10,18 @@ package org.zxg.concurrent.actor.core;
 /**
  * @author <a href="mailto:xianguang.zhou@outlook.com">Xianguang Zhou</a>
  */
-final class Task implements Runnable {
+final class StopTask implements Runnable {
 
 	private Actor actor;
-	private Object message;
+	private Object reason;
 
-	public Task(Actor actor, Object message) {
+	public StopTask(Actor actor, Object reason) {
 		this.actor = actor;
-		this.message = message;
+		this.reason = reason;
 	}
 
 	@Override
 	public void run() {
-		this.actor.receive(this.message);
+		this.actor.onStop(this.reason);
 	}
 }
