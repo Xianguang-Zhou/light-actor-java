@@ -23,6 +23,6 @@ public final class Receive {
 	Runnable afterHook;
 
 	Receive() {
-		receiveRules = new LinkedList<ReceiveRule>();
+		receiveRules = new LinkedList<>();
 	}
 }

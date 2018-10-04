@@ -15,9 +15,7 @@ import java.util.function.Predicate;
  */
 final class ReceiveRule {
 
-	private static final Predicate<Object> anyMatcher = (Object message) -> {
-		return true;
-	};
+	private static final Predicate<Object> anyMatcher = message -> true;
 
 	public Predicate<Object> matcher;
 	public Consumer<Object> receiver;

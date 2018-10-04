@@ -35,7 +35,7 @@ public class ActorGroup {
 			schedulers[index++] = new Scheduler(this, executor);
 		}
 		this.schedulersSize = executorsSize;
-		this.registry = new ConcurrentHashMap<String, Actor>();
+		this.registry = new ConcurrentHashMap<>();
 	}
 
 	public final void register(String name, Actor actor)

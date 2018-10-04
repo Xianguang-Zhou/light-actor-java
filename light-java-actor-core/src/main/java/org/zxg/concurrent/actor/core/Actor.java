@@ -27,10 +27,12 @@ public abstract class Actor {
 	AtomicReference<String> nameRef = new AtomicReference<>();
 	private Set<Actor> links;
 	private volatile boolean isTrapStop = false;
+	private Set<Actor> monitors;
 
 	protected Actor(ActorGroup group) {
-		this.savedMessages = new LinkedList<Object>();
-		this.links = new ConcurrentSkipListSet<Actor>();
+		this.savedMessages = new LinkedList<>();
+		this.links = new ConcurrentSkipListSet<>();
+		this.monitors = new ConcurrentSkipListSet<>();
 		this.receive = createReceive();
 		this.scheduler = group.nextScheduler();
 	}
@@ -92,6 +94,20 @@ public abstract class Actor {
 		return this.isTrapStop;
 	}
 
+	public final void monitor(Actor actor) {
+		if (isStoped || actor.isStoped) {
+			return;
+		}
+		actor.monitors.add(this);
+	}
+
+	public final void demonitor(Actor actor) {
+		if (isStoped || actor.isStoped) {
+			return;
+		}
+		actor.monitors.remove(this);
+	}
+
 	public final ActorGroup getGroup() {
 		return scheduler.group;
 	}
@@ -122,6 +138,12 @@ public abstract class Actor {
 		}
 
 		postStop(reason);
+
+		if (reason != null) {
+			for (Actor actor : monitors) {
+				actor.send(new DownMessage(this, reason));
+			}
+		}
 
 		for (Actor actor : links) {
 			if (actor.isTrapStop) {
