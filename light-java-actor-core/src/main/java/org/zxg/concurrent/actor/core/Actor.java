@@ -39,7 +39,7 @@ public abstract class Actor {
 
 	protected abstract Receive createReceive();
 
-	protected void preStart() {
+	protected void preStart() throws Exception {
 	}
 
 	protected void postStop(Object reason) {
@@ -54,6 +54,10 @@ public abstract class Actor {
 			return;
 		}
 		this.scheduler.send(this, message);
+	}
+
+	public final void stop() {
+		stop(null);
 	}
 
 	public final void stop(Object reason) {
@@ -137,7 +141,10 @@ public abstract class Actor {
 			});
 		}
 
-		postStop(reason);
+		try {
+			postStop(reason);
+		} catch (Exception ex) {
+		}
 
 		if (reason != null) {
 			DownMessage downMessage = null;
@@ -163,7 +170,11 @@ public abstract class Actor {
 	}
 
 	final void onStart() {
-		preStart();
+		try {
+			preStart();
+		} catch (Exception ex) {
+			onStop(ex);
+		}
 		if (receive.afterHook != null) {
 			this.afterFuture = this.scheduler.after(this);
 		}
@@ -182,20 +193,24 @@ public abstract class Actor {
 		if (isStoped) {
 			return;
 		}
-		for (ReceiveRule rule : receive.receiveRules) {
-			if (rule.matcher.test(message)) {
-				sendSavedMessages();
+		try {
+			for (ReceiveRule rule : receive.receiveRules) {
+				if (rule.matcher.test(message)) {
+					sendSavedMessages();
 
-				if (this.afterFuture != null) {
-					this.afterFuture.cancel(false);
-					this.afterFuture = this.scheduler.after(this);
+					if (this.afterFuture != null) {
+						this.afterFuture.cancel(false);
+						this.afterFuture = this.scheduler.after(this);
+					}
+
+					rule.receiver.accept(message);
+					return;
 				}
-
-				rule.receiver.accept(message);
-				return;
 			}
+			savedMessages.offer(message);
+		} catch (Exception ex) {
+			onStop(ex);
 		}
-		savedMessages.offer(message);
 	}
 
 	private final void sendSavedMessages() {
