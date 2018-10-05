@@ -174,6 +174,7 @@ public abstract class Actor {
 			preStart();
 		} catch (Exception ex) {
 			onStop(ex);
+			return;
 		}
 		if (receive.afterHook != null) {
 			this.afterFuture = this.scheduler.after(this);
@@ -184,7 +185,12 @@ public abstract class Actor {
 		if (isStoped) {
 			return;
 		}
-		receive.afterHook.run();
+		try {
+			receive.afterHook.run();
+		} catch (Exception ex) {
+			onStop(ex);
+			return;
+		}
 		sendSavedMessages();
 		this.afterFuture = this.scheduler.after(this);
 	}
@@ -207,10 +213,11 @@ public abstract class Actor {
 					return;
 				}
 			}
-			savedMessages.offer(message);
 		} catch (Exception ex) {
 			onStop(ex);
+			return;
 		}
+		savedMessages.offer(message);
 	}
 
 	private final void sendSavedMessages() {
