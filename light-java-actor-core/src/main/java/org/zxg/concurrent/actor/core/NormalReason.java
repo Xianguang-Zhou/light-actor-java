@@ -17,6 +17,7 @@ public final class NormalReason extends RuntimeException {
 	public static final NormalReason instance = new NormalReason();
 
 	private NormalReason() {
+		super("NormalReason", null, false, false);
 	}
 
 	@Override

@@ -42,7 +42,10 @@ public abstract class Actor {
 	protected void preStart() throws Exception {
 	}
 
-	protected void postStop(Object reason) {
+	protected void postStop(Object reason) throws Exception {
+	}
+
+	protected void printException(Exception exception) {
 	}
 
 	public final void start() {
@@ -144,6 +147,9 @@ public abstract class Actor {
 		try {
 			postStop(reason);
 		} catch (Exception ex) {
+			if (ex != NormalReason.instance) {
+				printException(ex);
+			}
 		}
 
 		if (reason != NormalReason.instance) {
