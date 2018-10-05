@@ -34,6 +34,9 @@ public abstract class Actor {
 		this.links = new ConcurrentSkipListSet<>();
 		this.monitors = new ConcurrentSkipListSet<>();
 		this.receive = createReceive();
+		if (this.receive == null) {
+			throw new NullPointerException();
+		}
 		this.scheduler = group.nextScheduler();
 	}
 
@@ -50,6 +53,9 @@ public abstract class Actor {
 	}
 
 	public final void send(Object message) {
+		if (message == null) {
+			throw new NullPointerException();
+		}
 		if (isStoped) {
 			return;
 		}
@@ -64,6 +70,9 @@ public abstract class Actor {
 	}
 
 	public final void stop(Object reason) {
+		if (reason == null) {
+			throw new NullPointerException();
+		}
 		if (isStoped) {
 			return;
 		}

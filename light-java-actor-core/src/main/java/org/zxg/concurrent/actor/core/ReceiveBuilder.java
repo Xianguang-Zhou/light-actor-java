@@ -25,16 +25,28 @@ public final class ReceiveBuilder {
 	}
 
 	public ReceiveBuilder matchAny(Consumer<Object> receiver) {
+		if (receiver == null) {
+			throw new NullPointerException();
+		}
 		receive.receiveRules.add(new ReceiveRule(receiver));
 		return this;
 	}
 
 	public ReceiveBuilder match(Predicate<Object> matcher, Consumer<Object> receiver) {
+		if (matcher == null || receiver == null) {
+			throw new NullPointerException();
+		}
 		receive.receiveRules.add(new ReceiveRule(matcher, receiver));
 		return this;
 	}
 
 	public ReceiveBuilder after(long time, TimeUnit unit, Runnable hook) {
+		if (unit == null || hook == null) {
+			throw new NullPointerException();
+		}
+		if (time <= 0) {
+			throw new IllegalArgumentException("Argument \"time\" should be a positive number.");
+		}
 		receive.afterTime = time;
 		receive.afterTimeUnit = unit;
 		receive.afterHook = hook;

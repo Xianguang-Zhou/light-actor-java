@@ -29,17 +29,27 @@ public class ActorGroup {
 	Map<String, Actor> registry;
 
 	public ActorGroup(Iterable<? extends ScheduledExecutorService> executors, int executorsSize) {
+		if (executorsSize <= 0) {
+			throw new IllegalArgumentException("Argument \"executorsSize\" should be a positive number.");
+		}
 		this.schedulers = new Scheduler[executorsSize];
 		int index = 0;
 		for (ScheduledExecutorService executor : executors) {
 			schedulers[index++] = new Scheduler(this, executor);
 		}
-		this.schedulersSize = executorsSize;
+		if (index < executorsSize) {
+			throw new IllegalArgumentException(
+					"Argument \"executorsSize\" is not equal to the size of argument \"executors\".");
+		}
+		this.schedulersSize = index;
 		this.registry = new ConcurrentHashMap<>();
 	}
 
 	public final void register(String name, Actor actor)
 			throws RepeatedActorNameException, ActorRegisteredException, ActorStopedException {
+		if (actor == null) {
+			throw new NullPointerException();
+		}
 		final Ref<ActorException> exRef = new Ref<>();
 		Actor oldActor = registry.computeIfAbsent(name, (String nameKey) -> {
 			if (!actor.isStoped()) {
