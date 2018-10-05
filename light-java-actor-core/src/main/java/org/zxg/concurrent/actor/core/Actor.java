@@ -140,14 +140,22 @@ public abstract class Actor {
 		postStop(reason);
 
 		if (reason != null) {
+			DownMessage downMessage = null;
 			for (Actor actor : monitors) {
-				actor.send(new DownMessage(this, reason));
+				if (downMessage == null) {
+					downMessage = new DownMessage(this, reason);
+				}
+				actor.send(downMessage);
 			}
 		}
 
+		ExitMessage exitMessage = null;
 		for (Actor actor : links) {
 			if (actor.isTrapStop) {
-				actor.send(new ExitMessage(this, reason));
+				if (exitMessage == null) {
+					exitMessage = new ExitMessage(this, reason);
+				}
+				actor.send(exitMessage);
 			} else {
 				actor.stop(reason);
 			}
