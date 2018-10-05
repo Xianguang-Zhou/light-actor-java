@@ -57,7 +57,7 @@ public abstract class Actor {
 	}
 
 	public final void stop() {
-		stop(null);
+		stop(NormalReason.instance);
 	}
 
 	public final void stop(Object reason) {
@@ -146,7 +146,7 @@ public abstract class Actor {
 		} catch (Exception ex) {
 		}
 
-		if (reason != null) {
+		if (reason != NormalReason.instance) {
 			DownMessage downMessage = null;
 			for (Actor actor : monitors) {
 				if (downMessage == null) {
