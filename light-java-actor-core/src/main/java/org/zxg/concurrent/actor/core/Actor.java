@@ -42,10 +42,7 @@ public abstract class Actor {
 	protected void preStart() throws Exception {
 	}
 
-	protected void postStop(Object reason) throws Exception {
-	}
-
-	protected void printException(Exception exception) {
+	protected void postStop(Object reason) {
 	}
 
 	public final void start() {
@@ -60,7 +57,10 @@ public abstract class Actor {
 	}
 
 	public final void stop() {
-		stop(NormalReason.instance);
+		if (isStoped) {
+			return;
+		}
+		this.scheduler.stop(this, new NormalReason());
 	}
 
 	public final void stop(Object reason) {
@@ -147,12 +147,9 @@ public abstract class Actor {
 		try {
 			postStop(reason);
 		} catch (Exception ex) {
-			if (ex != NormalReason.instance) {
-				printException(ex);
-			}
 		}
 
-		if (reason != NormalReason.instance) {
+		if (!(reason instanceof NormalReason)) {
 			DownMessage downMessage = null;
 			for (Actor actor : monitors) {
 				if (downMessage == null) {

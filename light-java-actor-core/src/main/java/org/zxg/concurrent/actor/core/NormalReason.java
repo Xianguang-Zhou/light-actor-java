@@ -14,10 +14,8 @@ public final class NormalReason extends RuntimeException {
 
 	private static final long serialVersionUID = 1L;
 
-	public static final NormalReason instance = new NormalReason();
-
-	private NormalReason() {
-		super("NormalReason", null, false, false);
+	public NormalReason() {
+		super("NormalReason", null, true, false);
 	}
 
 	@Override
