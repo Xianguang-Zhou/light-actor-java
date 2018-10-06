@@ -17,7 +17,7 @@ import java.util.concurrent.atomic.AtomicReference;
 /**
  * @author <a href="mailto:xianguang.zhou@outlook.com">Xianguang Zhou</a>
  */
-public abstract class Actor {
+public abstract class Actor implements Comparable<Actor> {
 
 	Receive receive;
 	private Scheduler scheduler;
@@ -46,6 +46,11 @@ public abstract class Actor {
 	}
 
 	protected void postStop(Object reason) {
+	}
+
+	@Override
+	public int compareTo(Actor other) {
+		return this.hashCode() - other.hashCode();
 	}
 
 	public final void start() {
