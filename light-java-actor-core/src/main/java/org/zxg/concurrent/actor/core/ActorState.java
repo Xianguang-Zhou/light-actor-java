@@ -5,18 +5,11 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-package org.zxg.concurrent.actor.core.exception;
-
-import org.zxg.concurrent.actor.core.ActorState;
+package org.zxg.concurrent.actor.core;
 
 /**
  * @author <a href="mailto:xianguang.zhou@outlook.com">Xianguang Zhou</a>
  */
-public class ActorStopedException extends ActorStateException {
-
-	private static final long serialVersionUID = 1L;
-
-	public ActorStopedException() {
-		super(ActorState.STOPED);
-	}
+public enum ActorState {
+	CREATED, STARTED, STOPED
 }

@@ -23,7 +23,7 @@ public abstract class Actor {
 	private Scheduler scheduler;
 	private Queue<Object> savedMessages;
 	private ScheduledFuture<?> afterFuture;
-	private volatile boolean isStoped = false;
+	private AtomicReference<ActorState> stateRef = new AtomicReference<>(ActorState.CREATED);
 	AtomicReference<String> nameRef = new AtomicReference<>();
 	private Set<Actor> links;
 	private volatile boolean isTrapStop = false;
@@ -49,42 +49,59 @@ public abstract class Actor {
 	}
 
 	public final void start() {
-		this.scheduler.start(this);
+		stateRef.getAndUpdate(state -> {
+			if (state == ActorState.CREATED) {
+				this.scheduler.start(this);
+				return ActorState.STARTED;
+			} else {
+				return state;
+			}
+		});
 	}
 
 	public final void send(Object message) {
 		if (message == null) {
 			throw new NullPointerException();
 		}
-		if (isStoped) {
+		if (stateRef.get() != ActorState.STARTED) {
 			return;
 		}
 		this.scheduler.send(this, message);
 	}
 
 	public final void stop() {
-		if (isStoped) {
-			return;
-		}
-		this.scheduler.stop(this, new NormalReason());
+		stop(null);
 	}
 
 	public final void stop(Object reason) {
-		if (reason == null) {
-			throw new NullPointerException();
+		Ref<Boolean> needStop = new Ref<>(false);
+		stateRef.getAndUpdate(state -> {
+			if (state == ActorState.STARTED) {
+				needStop.value = true;
+				return ActorState.STOPED;
+			} else {
+				return state;
+			}
+		});
+		if (needStop.value) {
+			this.scheduler.stop(this, reason);
 		}
-		if (isStoped) {
-			return;
-		}
-		this.scheduler.stop(this, reason);
+	}
+
+	public final ActorState getState() {
+		return stateRef.get();
 	}
 
 	public final boolean isStoped() {
-		return isStoped;
+		return stateRef.get() == ActorState.STOPED;
+	}
+
+	public final boolean isStarted() {
+		return stateRef.get() == ActorState.STARTED;
 	}
 
 	public final void link(Actor actor) {
-		if (isStoped || actor.isStoped) {
+		if (this.isStoped() || actor.isStoped()) {
 			return;
 		}
 		actor.links.add(this);
@@ -92,7 +109,7 @@ public abstract class Actor {
 	}
 
 	public final void unlink(Actor actor) {
-		if (isStoped || actor.isStoped) {
+		if (this.isStoped() || actor.isStoped()) {
 			return;
 		}
 		actor.links.remove(this);
@@ -100,7 +117,7 @@ public abstract class Actor {
 	}
 
 	public final void setTrapStop(boolean trapStop) {
-		if (isStoped) {
+		if (this.isStoped()) {
 			return;
 		}
 		this.isTrapStop = trapStop;
@@ -111,14 +128,14 @@ public abstract class Actor {
 	}
 
 	public final void monitor(Actor actor) {
-		if (isStoped || actor.isStoped) {
+		if (this.isStoped() || actor.isStoped()) {
 			return;
 		}
 		actor.monitors.add(this);
 	}
 
 	public final void demonitor(Actor actor) {
-		if (isStoped || actor.isStoped) {
+		if (this.isStoped() || actor.isStoped()) {
 			return;
 		}
 		actor.monitors.remove(this);
@@ -129,18 +146,13 @@ public abstract class Actor {
 	}
 
 	public final String getName() {
-		if (isStoped) {
+		if (this.isStoped()) {
 			return null;
 		}
 		return nameRef.get();
 	}
 
 	final void onStop(Object reason) {
-		if (isStoped) {
-			return;
-		}
-		isStoped = true;
-
 		String name = nameRef.get();
 		if (name != null) {
 			nameRef.set(null);
@@ -158,7 +170,7 @@ public abstract class Actor {
 		} catch (Exception ex) {
 		}
 
-		if (!(reason instanceof NormalReason)) {
+		if (reason != null) {
 			DownMessage downMessage = null;
 			for (Actor actor : monitors) {
 				if (downMessage == null) {
@@ -170,6 +182,7 @@ public abstract class Actor {
 
 		ExitMessage exitMessage = null;
 		for (Actor actor : links) {
+			actor.links.remove(this);
 			if (actor.isTrapStop) {
 				if (exitMessage == null) {
 					exitMessage = new ExitMessage(this, reason);
@@ -179,13 +192,17 @@ public abstract class Actor {
 				actor.stop(reason);
 			}
 		}
+
+		this.savedMessages = null;
+		this.links = null;
+		this.monitors = null;
 	}
 
 	final void onStart() {
 		try {
 			preStart();
 		} catch (Exception ex) {
-			onStop(ex);
+			stop(ex);
 			return;
 		}
 		if (receive.afterHook != null) {
@@ -194,13 +211,13 @@ public abstract class Actor {
 	}
 
 	final void onAfter() {
-		if (isStoped) {
+		if (isStoped()) {
 			return;
 		}
 		try {
 			receive.afterHook.run();
 		} catch (Exception ex) {
-			onStop(ex);
+			stop(ex);
 			return;
 		}
 		sendSavedMessages();
@@ -208,7 +225,7 @@ public abstract class Actor {
 	}
 
 	final void onReceive(Object message) {
-		if (isStoped) {
+		if (isStoped()) {
 			return;
 		}
 		try {
@@ -226,7 +243,7 @@ public abstract class Actor {
 				}
 			}
 		} catch (Exception ex) {
-			onStop(ex);
+			stop(ex);
 			return;
 		}
 		savedMessages.offer(message);

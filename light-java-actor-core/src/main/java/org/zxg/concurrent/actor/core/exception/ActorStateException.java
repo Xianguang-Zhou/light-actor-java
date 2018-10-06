@@ -5,21 +5,18 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-package org.zxg.concurrent.actor.core;
+package org.zxg.concurrent.actor.core.exception;
+
+import org.zxg.concurrent.actor.core.ActorState;
 
 /**
  * @author <a href="mailto:xianguang.zhou@outlook.com">Xianguang Zhou</a>
  */
-public final class NormalReason extends RuntimeException {
+public class ActorStateException extends ActorException {
 
 	private static final long serialVersionUID = 1L;
 
-	public NormalReason() {
-		super("NormalReason", null, true, false);
-	}
-
-	@Override
-	public String toString() {
-		return "NormalReason";
+	public ActorStateException(ActorState state) {
+		super(String.format("Actor state is \"%s\".", state.toString()));
 	}
 }
