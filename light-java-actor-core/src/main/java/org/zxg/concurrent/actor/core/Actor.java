@@ -28,11 +28,13 @@ public abstract class Actor implements Comparable<Actor> {
 	private Set<Actor> links;
 	private volatile boolean isTrapStop = false;
 	private Set<Actor> monitors;
+	private Set<Actor> monitoredActors;
 
 	protected Actor(ActorGroup group) {
 		this.savedMessages = new LinkedList<>();
 		this.links = new ConcurrentSkipListSet<>();
 		this.monitors = new ConcurrentSkipListSet<>();
+		this.monitoredActors = new ConcurrentSkipListSet<>();
 		this.receive = createReceive();
 		if (this.receive == null) {
 			throw new NullPointerException();
@@ -128,6 +130,7 @@ public abstract class Actor implements Comparable<Actor> {
 			return;
 		}
 		actor.monitors.add(this);
+		this.monitoredActors.add(actor);
 	}
 
 	public final void demonitor(Actor actor) {
@@ -135,6 +138,7 @@ public abstract class Actor implements Comparable<Actor> {
 			return;
 		}
 		actor.monitors.remove(this);
+		this.monitoredActors.remove(actor);
 	}
 
 	public final ActorGroup getGroup() {
@@ -189,9 +193,13 @@ public abstract class Actor implements Comparable<Actor> {
 			}
 		}
 
+		for (Actor actor : this.monitoredActors) {
+			actor.monitors.remove(this);
+		}
 		this.savedMessages = null;
 		this.links = null;
 		this.monitors = null;
+		this.monitoredActors = null;
 	}
 
 	final void onStart() {
