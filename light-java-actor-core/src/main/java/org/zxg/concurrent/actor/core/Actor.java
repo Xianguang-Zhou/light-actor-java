@@ -99,7 +99,7 @@ public abstract class Actor implements Comparable<Actor> {
 	}
 
 	public final void link(Actor actor) {
-		if (this.isStopped() || actor.isStopped()) {
+		if (this == actor || this.isStopped() || actor.isStopped()) {
 			return;
 		}
 		actor.links.add(this);
@@ -126,7 +126,7 @@ public abstract class Actor implements Comparable<Actor> {
 	}
 
 	public final void monitor(Actor actor) {
-		if (this.isStopped() || actor.isStopped()) {
+		if (this == actor || this.isStopped() || actor.isStopped()) {
 			return;
 		}
 		actor.monitors.add(this);
@@ -172,16 +172,21 @@ public abstract class Actor implements Comparable<Actor> {
 
 		if (reason != null) {
 			DownMessage downMessage = null;
-			for (Actor actor : monitors) {
+			for (Actor actor : this.monitors) {
+				actor.monitoredActors.remove(this);
 				if (downMessage == null) {
 					downMessage = new DownMessage(this, reason);
 				}
 				actor.send(downMessage);
 			}
+		} else {
+			for (Actor actor : this.monitors) {
+				actor.monitoredActors.remove(this);
+			}
 		}
 
 		ExitMessage exitMessage = null;
-		for (Actor actor : links) {
+		for (Actor actor : this.links) {
 			actor.links.remove(this);
 			if (actor.isTrapStop) {
 				if (exitMessage == null) {
@@ -197,9 +202,9 @@ public abstract class Actor implements Comparable<Actor> {
 			actor.monitors.remove(this);
 		}
 		this.savedMessages = null;
-		this.links = null;
-		this.monitors = null;
-		this.monitoredActors = null;
+		this.links.clear();
+		this.monitors.clear();
+		this.monitoredActors.clear();
 	}
 
 	final void onStart() {
