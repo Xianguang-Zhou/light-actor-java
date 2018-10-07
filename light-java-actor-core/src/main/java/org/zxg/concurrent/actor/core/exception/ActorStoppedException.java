@@ -12,11 +12,11 @@ import org.zxg.concurrent.actor.core.ActorState;
 /**
  * @author <a href="mailto:xianguang.zhou@outlook.com">Xianguang Zhou</a>
  */
-public class ActorStopedException extends ActorStateException {
+public class ActorStoppedException extends ActorStateException {
 
 	private static final long serialVersionUID = 1L;
 
-	public ActorStopedException() {
-		super(ActorState.STOPED);
+	public ActorStoppedException() {
+		super(ActorState.STOPPED);
 	}
 }

@@ -79,16 +79,7 @@ public abstract class Actor implements Comparable<Actor> {
 	}
 
 	public final void stop(Object reason) {
-		Ref<Boolean> needStop = new Ref<>(false);
-		stateRef.getAndUpdate(state -> {
-			if (state == ActorState.STARTED) {
-				needStop.value = true;
-				return ActorState.STOPED;
-			} else {
-				return state;
-			}
-		});
-		if (needStop.value) {
+		if (stateRef.compareAndSet(ActorState.STARTED, ActorState.STOPPED)) {
 			this.scheduler.stop(this, reason);
 		}
 	}
@@ -97,8 +88,8 @@ public abstract class Actor implements Comparable<Actor> {
 		return stateRef.get();
 	}
 
-	public final boolean isStoped() {
-		return stateRef.get() == ActorState.STOPED;
+	public final boolean isStopped() {
+		return stateRef.get() == ActorState.STOPPED;
 	}
 
 	public final boolean isStarted() {
@@ -106,7 +97,7 @@ public abstract class Actor implements Comparable<Actor> {
 	}
 
 	public final void link(Actor actor) {
-		if (this.isStoped() || actor.isStoped()) {
+		if (this.isStopped() || actor.isStopped()) {
 			return;
 		}
 		actor.links.add(this);
@@ -114,7 +105,7 @@ public abstract class Actor implements Comparable<Actor> {
 	}
 
 	public final void unlink(Actor actor) {
-		if (this.isStoped() || actor.isStoped()) {
+		if (this.isStopped() || actor.isStopped()) {
 			return;
 		}
 		actor.links.remove(this);
@@ -122,7 +113,7 @@ public abstract class Actor implements Comparable<Actor> {
 	}
 
 	public final void setTrapStop(boolean trapStop) {
-		if (this.isStoped()) {
+		if (this.isStopped()) {
 			return;
 		}
 		this.isTrapStop = trapStop;
@@ -133,14 +124,14 @@ public abstract class Actor implements Comparable<Actor> {
 	}
 
 	public final void monitor(Actor actor) {
-		if (this.isStoped() || actor.isStoped()) {
+		if (this.isStopped() || actor.isStopped()) {
 			return;
 		}
 		actor.monitors.add(this);
 	}
 
 	public final void demonitor(Actor actor) {
-		if (this.isStoped() || actor.isStoped()) {
+		if (this.isStopped() || actor.isStopped()) {
 			return;
 		}
 		actor.monitors.remove(this);
@@ -151,7 +142,7 @@ public abstract class Actor implements Comparable<Actor> {
 	}
 
 	public final String getName() {
-		if (this.isStoped()) {
+		if (this.isStopped()) {
 			return null;
 		}
 		return nameRef.get();
@@ -204,6 +195,7 @@ public abstract class Actor implements Comparable<Actor> {
 	}
 
 	final void onStart() {
+		stateRef.compareAndSet(ActorState.CREATED, ActorState.STARTED);
 		try {
 			preStart();
 		} catch (Exception ex) {
@@ -216,7 +208,7 @@ public abstract class Actor implements Comparable<Actor> {
 	}
 
 	final void onAfter() {
-		if (isStoped()) {
+		if (isStopped()) {
 			return;
 		}
 		try {
@@ -230,7 +222,7 @@ public abstract class Actor implements Comparable<Actor> {
 	}
 
 	final void onReceive(Object message) {
-		if (isStoped()) {
+		if (isStopped()) {
 			return;
 		}
 		try {

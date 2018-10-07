@@ -14,7 +14,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.zxg.concurrent.actor.core.exception.ActorException;
 import org.zxg.concurrent.actor.core.exception.ActorRegisteredException;
-import org.zxg.concurrent.actor.core.exception.ActorStopedException;
+import org.zxg.concurrent.actor.core.exception.ActorStoppedException;
 import org.zxg.concurrent.actor.core.exception.InvalidActorNameException;
 import org.zxg.concurrent.actor.core.exception.RepeatedActorNameException;
 
@@ -46,24 +46,24 @@ public class ActorGroup {
 	}
 
 	public final void register(String name, Actor actor)
-			throws RepeatedActorNameException, ActorRegisteredException, ActorStopedException {
+			throws RepeatedActorNameException, ActorRegisteredException, ActorStoppedException {
 		if (actor == null) {
 			throw new NullPointerException();
 		}
 		final Ref<ActorException> exRef = new Ref<>();
 		Actor oldActor = registry.computeIfAbsent(name, (String nameKey) -> {
-			if (!actor.isStoped()) {
+			if (!actor.isStopped()) {
 				if (actor.nameRef.compareAndSet(null, nameKey)) {
-					if (!actor.isStoped()) {
+					if (!actor.isStopped()) {
 						return actor;
 					} else {
-						exRef.value = new ActorStopedException();
+						exRef.value = new ActorStoppedException();
 					}
 				} else {
 					exRef.value = new ActorRegisteredException();
 				}
 			} else {
-				exRef.value = new ActorStopedException();
+				exRef.value = new ActorStoppedException();
 			}
 			return null;
 		});
@@ -74,16 +74,16 @@ public class ActorGroup {
 		}
 	}
 
-	public final void unregister(String name) throws ActorStopedException, InvalidActorNameException {
+	public final void unregister(String name) throws ActorStoppedException, InvalidActorNameException {
 		final Ref<ActorException> exRef = new Ref<>();
 		final Ref<Boolean> existsRef = new Ref<>(false);
 		registry.computeIfPresent(name, (String nameKey, Actor actorValue) -> {
 			existsRef.value = true;
-			if (!actorValue.isStoped()) {
+			if (!actorValue.isStopped()) {
 				actorValue.nameRef.set(null);
 				return null;
 			} else {
-				exRef.value = new ActorStopedException();
+				exRef.value = new ActorStoppedException();
 			}
 			return actorValue;
 		});

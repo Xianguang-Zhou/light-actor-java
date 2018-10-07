@@ -11,5 +11,5 @@ package org.zxg.concurrent.actor.core;
  * @author <a href="mailto:xianguang.zhou@outlook.com">Xianguang Zhou</a>
  */
 public enum ActorState {
-	CREATED, STARTED, STOPED
+	CREATED, STARTED, STOPPED
 }
