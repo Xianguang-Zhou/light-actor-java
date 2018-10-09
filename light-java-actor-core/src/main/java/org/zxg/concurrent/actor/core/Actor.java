@@ -13,6 +13,10 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
+
+import org.zxg.concurrent.actor.core.exception.ActorStateException;
+import org.zxg.concurrent.actor.core.exception.ActorStoppedException;
 
 /**
  * @author <a href="mailto:xianguang.zhou@outlook.com">Xianguang Zhou</a>
@@ -152,6 +156,39 @@ public abstract class Actor implements Comparable<Actor> {
 		return nameRef.get();
 	}
 
+	public final void execute(Runnable command) {
+		if (command == null) {
+			throw new NullPointerException();
+		}
+		if (this.getState() != ActorState.STARTED) {
+			return;
+		}
+		this.scheduler.execute(() -> {
+			if (this.isStopped()) {
+				return;
+			}
+			command.run();
+		});
+	}
+
+	public final void execute(Runnable command, Consumer<ActorStateException> failureHandler) {
+		if (command == null) {
+			throw new NullPointerException();
+		}
+		ActorState state = this.getState();
+		if (state != ActorState.STARTED) {
+			failureHandler.accept(new ActorStateException(state));
+			return;
+		}
+		this.scheduler.execute(() -> {
+			if (this.isStopped()) {
+				failureHandler.accept(new ActorStoppedException());
+				return;
+			}
+			command.run();
+		});
+	}
+
 	final void onStop(Object reason) {
 		String name = nameRef.get();
 		if (name != null) {
@@ -170,19 +207,13 @@ public abstract class Actor implements Comparable<Actor> {
 		} catch (Exception ex) {
 		}
 
-		if (reason != null) {
-			DownMessage downMessage = null;
-			for (Actor actor : this.monitors) {
-				actor.monitoredActors.remove(this);
-				if (downMessage == null) {
-					downMessage = new DownMessage(this, reason);
-				}
-				actor.send(downMessage);
+		DownMessage downMessage = null;
+		for (Actor actor : this.monitors) {
+			actor.monitoredActors.remove(this);
+			if (downMessage == null) {
+				downMessage = new DownMessage(this, reason);
 			}
-		} else {
-			for (Actor actor : this.monitors) {
-				actor.monitoredActors.remove(this);
-			}
+			actor.send(downMessage);
 		}
 
 		ExitMessage exitMessage = null;

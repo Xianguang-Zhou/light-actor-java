@@ -38,4 +38,8 @@ final class Scheduler {
 	public void stop(Actor actor, Object reason) {
 		this.executor.execute(new StopTask(actor, reason));
 	}
+
+	public void execute(Runnable command) {
+		this.executor.execute(command);
+	}
 }

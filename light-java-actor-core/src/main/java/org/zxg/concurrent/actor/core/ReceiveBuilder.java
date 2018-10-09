@@ -24,11 +24,11 @@ public final class ReceiveBuilder {
 		receive = new Receive();
 	}
 
-	public ReceiveBuilder matchAny(Consumer<Object> receiver) {
-		if (receiver == null) {
+	public ReceiveBuilder ignore(Predicate<Object> matcher) {
+		if (matcher == null) {
 			throw new NullPointerException();
 		}
-		receive.receiveRules.add(new ReceiveRule(receiver));
+		receive.receiveRules.add(new ReceiveRule(matcher));
 		return this;
 	}
 
@@ -37,6 +37,19 @@ public final class ReceiveBuilder {
 			throw new NullPointerException();
 		}
 		receive.receiveRules.add(new ReceiveRule(matcher, receiver));
+		return this;
+	}
+
+	public ReceiveBuilder matchAny(Consumer<Object> receiver) {
+		if (receiver == null) {
+			throw new NullPointerException();
+		}
+		receive.receiveRules.add(new ReceiveRule(receiver));
+		return this;
+	}
+
+	public ReceiveBuilder ingoreAny() {
+		receive.receiveRules.add(new ReceiveRule());
 		return this;
 	}
 
