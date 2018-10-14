@@ -37,8 +37,7 @@ public class Server {
 	}
 
 	public final void call(Object request, Consumer<Object> responseHandler, Actor client) {
-		call(request, responseHandler, failure -> {
-		}, client);
+		call(request, responseHandler, failure -> client.stop(failure), client);
 	}
 
 	public final void call(Object request, Consumer<Object> responseHandler,
@@ -62,7 +61,7 @@ public class Server {
 				@Override
 				protected Receive createReceive() {
 					return new ReceiveBuilder().match(new TypeMatcher(DownMessage.class), message -> {
-						failureHandler.accept(new ActorStoppedException());
+						failureHandler.accept(new ActorStoppedException(server));
 						stop();
 					}).matchAny(response -> {
 						responseHandler.accept(response);

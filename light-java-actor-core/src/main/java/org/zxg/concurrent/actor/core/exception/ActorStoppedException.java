@@ -7,6 +7,7 @@
  */
 package org.zxg.concurrent.actor.core.exception;
 
+import org.zxg.concurrent.actor.core.Actor;
 import org.zxg.concurrent.actor.core.ActorState;
 
 /**
@@ -16,7 +17,7 @@ public class ActorStoppedException extends ActorStateException {
 
 	private static final long serialVersionUID = 1L;
 
-	public ActorStoppedException() {
-		super(ActorState.STOPPED);
+	public ActorStoppedException(Actor actor) {
+		super(actor, ActorState.STOPPED);
 	}
 }

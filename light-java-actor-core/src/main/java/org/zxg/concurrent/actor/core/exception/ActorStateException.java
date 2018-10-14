@@ -7,6 +7,7 @@
  */
 package org.zxg.concurrent.actor.core.exception;
 
+import org.zxg.concurrent.actor.core.Actor;
 import org.zxg.concurrent.actor.core.ActorState;
 
 /**
@@ -16,7 +17,7 @@ public class ActorStateException extends ActorException {
 
 	private static final long serialVersionUID = 1L;
 
-	public ActorStateException(ActorState state) {
-		super(String.format("Actor state is \"%s\".", state.toString()));
+	public ActorStateException(Actor actor, ActorState state) {
+		super(String.format("The state of the actor \"%s\" is \"%s\".", actor.toString(), state.toString()));
 	}
 }

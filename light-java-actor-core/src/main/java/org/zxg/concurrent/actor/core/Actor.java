@@ -157,17 +157,7 @@ public abstract class Actor implements Comparable<Actor> {
 	}
 
 	public final void execute(Runnable command) {
-		if (command == null) {
-			throw new NullPointerException();
-		}
-		if (this.getState() != ActorState.STARTED) {
-			return;
-		}
-		this.scheduler.execute(() -> {
-			if (this.isStopped()) {
-				return;
-			}
-			command.run();
+		execute(command, failure -> {
 		});
 	}
 
@@ -177,15 +167,19 @@ public abstract class Actor implements Comparable<Actor> {
 		}
 		ActorState state = this.getState();
 		if (state != ActorState.STARTED) {
-			failureHandler.accept(new ActorStateException(state));
+			failureHandler.accept(new ActorStateException(this, state));
 			return;
 		}
 		this.scheduler.execute(() -> {
 			if (this.isStopped()) {
-				failureHandler.accept(new ActorStoppedException());
+				failureHandler.accept(new ActorStoppedException(this));
 				return;
 			}
-			command.run();
+			try {
+				command.run();
+			} catch (Exception ex) {
+				stop(ex);
+			}
 		});
 	}
 

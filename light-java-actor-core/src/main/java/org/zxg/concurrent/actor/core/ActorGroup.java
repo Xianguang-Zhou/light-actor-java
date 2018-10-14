@@ -57,13 +57,13 @@ public class ActorGroup {
 					if (!actor.isStopped()) {
 						return actor;
 					} else {
-						exRef.value = new ActorStoppedException();
+						exRef.value = new ActorStoppedException(actor);
 					}
 				} else {
 					exRef.value = new ActorRegisteredException();
 				}
 			} else {
-				exRef.value = new ActorStoppedException();
+				exRef.value = new ActorStoppedException(actor);
 			}
 			return null;
 		});
@@ -83,7 +83,7 @@ public class ActorGroup {
 				actorValue.nameRef.set(null);
 				return null;
 			} else {
-				exRef.value = new ActorStoppedException();
+				exRef.value = new ActorStoppedException(actorValue);
 			}
 			return actorValue;
 		});
