@@ -2,12 +2,12 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-	<groupId>org.zxg.concurrent</groupId>
-	<artifactId>light-java-actor</artifactId>
+	<groupId>org.zxg.concurrent.actor</groupId>
+	<artifactId>light-actor-java</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<packaging>pom</packaging>
 
-	<url>https://github.com/Xianguang-Zhou/light-java-actor</url>
+	<url>https://github.com/Xianguang-Zhou/light-actor-java</url>
 
 	<licenses>
 		<license>
@@ -30,9 +30,7 @@
 	</properties>
 
 	<modules>
-		<module>light-java-actor-core</module>
-		<module>light-java-actor-behaviour</module>
-		<module>light-java-actor-netty</module>
+		<module>light-actor-async</module>
 	</modules>
 </project>
 
