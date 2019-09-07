@@ -1,0 +1,52 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<parent>
+		<groupId>org.zxg.concurrent.actor</groupId>
+		<artifactId>light-actor-sync</artifactId>
+		<version>0.0.1-SNAPSHOT</version>
+	</parent>
+
+	<artifactId>light-actor-eaasync</artifactId>
+	<packaging>pom</packaging>
+
+	<properties>
+		<ea-async.version>1.2.3</ea-async.version>
+	</properties>
+
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>com.ea.async</groupId>
+				<artifactId>ea-async</artifactId>
+				<version>${ea-async.version}</version>
+				<scope>provided</scope>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
+
+	<build>
+		<pluginManagement>
+			<plugins>
+				<plugin>
+					<groupId>com.ea.async</groupId>
+					<artifactId>ea-async-maven-plugin</artifactId>
+					<version>${ea-async.version}</version>
+					<executions>
+						<execution>
+							<goals>
+								<goal>instrument</goal>
+								<goal>instrument-test</goal>
+							</goals>
+						</execution>
+					</executions>
+				</plugin>
+			</plugins>
+		</pluginManagement>
+	</build>
+
+	<modules>
+		<module>light-actor-eaasync-core</module>
+	</modules>
+</project>
+
