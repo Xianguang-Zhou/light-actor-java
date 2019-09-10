@@ -47,6 +47,7 @@
 
 	<modules>
 		<module>light-actor-eaasync-core</module>
+		<module>light-actor-eaasync-netty</module>
 	</modules>
 </project>
 
