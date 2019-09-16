@@ -10,8 +10,8 @@ package org.zxg.concurrent.actor.eaasync.core;
 import static com.ea.async.Async.await;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 
+import java.util.Deque;
 import java.util.LinkedList;
-import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -23,7 +23,7 @@ public abstract class Actor {
 	private Scheduler scheduler;
 	private AtomicReference<ActorState> stateRef = new AtomicReference<>(ActorState.CREATED);
 	private CompletableFuture<Object> next;
-	private Queue<Object> messages = new LinkedList<>();
+	private Deque<Object> messages = new LinkedList<>();
 
 	protected Actor(ActorGroup group) {
 		this.scheduler = group.nextScheduler();
@@ -31,7 +31,7 @@ public abstract class Actor {
 
 	protected abstract CompletableFuture<Void> run();
 
-	CompletableFuture<Void> internalRun() {
+	private CompletableFuture<Void> internalRun() {
 		stateRef.compareAndSet(ActorState.CREATED, ActorState.STARTED);
 		Void result = await(run());
 		stateRef.compareAndSet(ActorState.STARTED, ActorState.STOPPED);
@@ -76,21 +76,65 @@ public abstract class Actor {
 		return scheduler.group;
 	}
 
-	public static CompletableFuture<Object> receive() {
+	public static Actor current() {
 		Scheduler scheduler = Scheduler.ofThread();
-		if (null == scheduler) {
-			return completedFuture(null);
+		if (null != scheduler) {
+			return scheduler.currentActor;
 		}
-		Actor self = scheduler.currentActor;
+		return null;
+	}
+
+	public static CompletableFuture<Object> receive() {
+		Actor self = current();
 		if (null == self) {
 			return completedFuture(null);
 		}
-		if (self.messages.isEmpty()) {
+		return self.internalReceive();
+	}
+
+	public static CompletableFuture<Void> receive(Receive receive) {
+		Actor self = current();
+		if (null == self) {
+			return completedFuture(null);
+		}
+
+		Deque<Object> unmatchedMessages = new LinkedList<>();
+		do {
+			Object message = await(self.internalReceive());
+			for (ReceiveRule rule : receive.receiveRules) {
+				boolean isMatched;
+				try {
+					isMatched = rule.matcher.test(message);
+				} catch (Exception ex) {
+					unmatchedMessages.offer(message);
+					self.restoreUnmatchedMessages(unmatchedMessages);
+					CompletableFuture<Void> future = new CompletableFuture<>();
+					future.completeExceptionally(ex);
+					return future;
+				}
+				if (isMatched) {
+					self.restoreUnmatchedMessages(unmatchedMessages);
+					return rule.receiver.accept(message);
+				}
+			}
+			unmatchedMessages.offer(message);
+		} while (true);
+	}
+
+	private final void restoreUnmatchedMessages(Deque<Object> unmatchedMessages) {
+		Object message;
+		while ((message = unmatchedMessages.pollLast()) != null) {
+			this.messages.offerFirst(message);
+		}
+	}
+
+	private CompletableFuture<Object> internalReceive() {
+		if (this.messages.isEmpty()) {
 			scheduler.currentActor = null;
-			self.next = new CompletableFuture<>();
-			return self.next;
+			this.next = new CompletableFuture<>();
+			return this.next;
 		} else {
-			return completedFuture(self.messages.poll());
+			return completedFuture(this.messages.poll());
 		}
 	}
 
