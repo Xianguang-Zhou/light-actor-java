@@ -13,12 +13,15 @@ import static java.util.concurrent.CompletableFuture.completedFuture;
 import java.util.Deque;
 import java.util.LinkedList;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * @author <a href="mailto:xianguang.zhou@outlook.com">Xianguang Zhou</a>
  */
 public abstract class Actor {
+
+	private static final Object AFTER_MESSAGE = new Object();
 
 	private Scheduler scheduler;
 	private AtomicReference<ActorState> stateRef = new AtomicReference<>(ActorState.CREATED);
@@ -98,14 +101,26 @@ public abstract class Actor {
 			return completedFuture(null);
 		}
 
+		ScheduledFuture<?> afterFuture = null;
+		if (receive.afterHook != null) {
+			afterFuture = self.scheduler.after(self, receive);
+		}
+
 		Deque<Object> unmatchedMessages = new LinkedList<>();
 		do {
 			Object message = await(self.internalReceive());
+			if (AFTER_MESSAGE == message) {
+				self.restoreUnmatchedMessages(unmatchedMessages);
+				return receive.afterHook.run();
+			}
 			for (ReceiveRule rule : receive.receiveRules) {
-				boolean isMatched;
+				boolean isMatched = false;
 				try {
 					isMatched = rule.matcher.test(message);
 				} catch (Exception ex) {
+					if (afterFuture != null) {
+						afterFuture.cancel(false);
+					}
 					unmatchedMessages.offer(message);
 					self.restoreUnmatchedMessages(unmatchedMessages);
 					CompletableFuture<Void> future = new CompletableFuture<>();
@@ -113,8 +128,14 @@ public abstract class Actor {
 					return future;
 				}
 				if (isMatched) {
-					self.restoreUnmatchedMessages(unmatchedMessages);
-					return rule.receiver.accept(message);
+					if (null == afterFuture || afterFuture.cancel(false)) {
+						self.restoreUnmatchedMessages(unmatchedMessages);
+						return rule.receiver.accept(message);
+					} else {
+						unmatchedMessages.offer(message);
+						self.restoreUnmatchedMessages(unmatchedMessages);
+						return completedFuture(null);
+					}
 				}
 			}
 			unmatchedMessages.offer(message);
@@ -147,6 +168,10 @@ public abstract class Actor {
 			scheduler.currentActor = this;
 			this.next.complete(messages.poll());
 		}
+	}
+
+	void onAfter() {
+		onReceive(AFTER_MESSAGE);
 	}
 
 	void onStart() {

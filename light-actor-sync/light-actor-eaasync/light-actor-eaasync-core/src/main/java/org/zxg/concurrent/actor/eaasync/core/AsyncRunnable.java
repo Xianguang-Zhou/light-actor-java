@@ -7,22 +7,24 @@
  */
 package org.zxg.concurrent.actor.eaasync.core;
 
-import java.util.LinkedList;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
+import static com.ea.async.Async.await;
+
+import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * @author <a href="mailto:xianguang.zhou@outlook.com">Xianguang Zhou</a>
  */
-public final class Receive {
+@FunctionalInterface
+public interface AsyncRunnable {
 
-	List<ReceiveRule> receiveRules;
+	CompletableFuture<Void> run();
 
-	long afterTime;
-	TimeUnit afterTimeUnit;
-	AsyncRunnable afterHook;
-
-	Receive() {
-		receiveRules = new LinkedList<>();
+	default AsyncRunnable andThen(AsyncRunnable after) {
+		Objects.requireNonNull(after);
+		return () -> {
+			await(run());
+			return after.run();
+		};
 	}
 }

@@ -8,6 +8,7 @@
 package org.zxg.concurrent.actor.eaasync.core;
 
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 
 /**
  * @author <a href="mailto:xianguang.zhou@outlook.com">Xianguang Zhou</a>
@@ -34,6 +35,10 @@ final class Scheduler {
 
 	public void start(Actor actor) {
 		this.executor.execute(actor::onStart);
+	}
+
+	public ScheduledFuture<?> after(Actor actor, Receive receive) {
+		return this.executor.schedule(actor::onAfter, receive.afterTime, receive.afterTimeUnit);
 	}
 
 	public static Scheduler ofThread() {

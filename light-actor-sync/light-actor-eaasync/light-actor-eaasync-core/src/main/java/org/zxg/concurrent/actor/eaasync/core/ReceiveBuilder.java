@@ -7,6 +7,7 @@
  */
 package org.zxg.concurrent.actor.eaasync.core;
 
+import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 
 import org.zxg.concurrent.actor.eaasync.core.exception.InvalidReceiveException;
@@ -51,8 +52,21 @@ public final class ReceiveBuilder {
 		return this;
 	}
 
+	public ReceiveBuilder after(long time, TimeUnit unit, AsyncRunnable hook) {
+		if (unit == null || hook == null) {
+			throw new NullPointerException();
+		}
+		if (time <= 0) {
+			throw new IllegalArgumentException("Argument \"time\" should be a positive number.");
+		}
+		receive.afterTime = time;
+		receive.afterTimeUnit = unit;
+		receive.afterHook = hook;
+		return this;
+	}
+
 	public Receive build() throws InvalidReceiveException {
-		if (receive.receiveRules.isEmpty()) {
+		if (receive.receiveRules.isEmpty() && receive.afterHook == null) {
 			throw new InvalidReceiveException();
 		}
 		return receive;
