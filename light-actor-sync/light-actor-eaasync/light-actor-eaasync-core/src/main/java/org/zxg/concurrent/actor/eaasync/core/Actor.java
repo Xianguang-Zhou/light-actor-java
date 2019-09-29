@@ -12,34 +12,37 @@ import static java.util.concurrent.CompletableFuture.completedFuture;
 
 import java.util.Deque;
 import java.util.LinkedList;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * @author <a href="mailto:xianguang.zhou@outlook.com">Xianguang Zhou</a>
  */
-public abstract class Actor {
+public abstract class Actor implements Comparable<Actor> {
 
 	private static final Object AFTER_MESSAGE = new Object();
 
 	private Scheduler scheduler;
 	private AtomicReference<ActorState> stateRef = new AtomicReference<>(ActorState.CREATED);
 	private CompletableFuture<Object> next;
-	private Deque<Object> messages = new LinkedList<>();
+	private Deque<Object> savedMessages = new LinkedList<>();
+	private Set<Actor> links = new ConcurrentSkipListSet<>();
+	private volatile boolean isTrapStop = false;
+	private Set<Actor> monitors = new ConcurrentSkipListSet<>();
+	private Set<Actor> monitoredActors = new ConcurrentSkipListSet<>();
 
 	protected Actor(ActorGroup group) {
 		this.scheduler = group.nextScheduler();
 	}
 
-	protected abstract CompletableFuture<Void> run();
+	protected abstract CompletableFuture<Object> run();
 
-	private CompletableFuture<Void> internalRun() {
-		stateRef.compareAndSet(ActorState.CREATED, ActorState.STARTED);
-		Void result = await(run());
-		stateRef.compareAndSet(ActorState.STARTED, ActorState.STOPPED);
-		scheduler.currentActor = null;
-		return completedFuture(result);
+	@Override
+	public int compareTo(Actor other) {
+		return this.hashCode() - other.hashCode();
 	}
 
 	public final void start() {
@@ -63,6 +66,21 @@ public abstract class Actor {
 		this.scheduler.send(this, message);
 	}
 
+	public final CompletableFuture<Void> stop() {
+		return stop(null);
+	}
+
+	public final CompletableFuture<Void> stop(Object reason) {
+		if (stateRef.compareAndSet(ActorState.STARTED, ActorState.STOPPED)) {
+			this.scheduler.stop(this, reason);
+		}
+		CompletableFuture<Void> future = new CompletableFuture<>();
+		if (current() != this) {
+			future.complete(null);
+		}
+		return future;
+	}
+
 	public final ActorState getState() {
 		return stateRef.get();
 	}
@@ -73,6 +91,49 @@ public abstract class Actor {
 
 	public final boolean isStarted() {
 		return stateRef.get() == ActorState.STARTED;
+	}
+
+	public final void link(Actor actor) {
+		if (this == actor || this.isStopped() || actor.isStopped()) {
+			return;
+		}
+		actor.links.add(this);
+		this.links.add(actor);
+	}
+
+	public final void unlink(Actor actor) {
+		if (this.isStopped() || actor.isStopped()) {
+			return;
+		}
+		actor.links.remove(this);
+		this.links.remove(actor);
+	}
+
+	public final void setTrapStop(boolean trapStop) {
+		if (this.isStopped()) {
+			return;
+		}
+		this.isTrapStop = trapStop;
+	}
+
+	public final boolean isTrapStop() {
+		return this.isTrapStop;
+	}
+
+	public final void monitor(Actor actor) {
+		if (this == actor || this.isStopped() || actor.isStopped()) {
+			return;
+		}
+		actor.monitors.add(this);
+		this.monitoredActors.add(actor);
+	}
+
+	public final void demonitor(Actor actor) {
+		if (this.isStopped() || actor.isStopped()) {
+			return;
+		}
+		actor.monitors.remove(this);
+		this.monitoredActors.remove(actor);
 	}
 
 	public final ActorGroup getGroup() {
@@ -145,17 +206,22 @@ public abstract class Actor {
 	private final void restoreUnmatchedMessages(Deque<Object> unmatchedMessages) {
 		Object message;
 		while ((message = unmatchedMessages.pollLast()) != null) {
-			this.messages.offerFirst(message);
+			this.savedMessages.offerFirst(message);
 		}
 	}
 
-	private CompletableFuture<Object> internalReceive() {
-		if (this.messages.isEmpty()) {
+	private final CompletableFuture<Object> internalReceive() {
+		if (isStopped()) {
+			scheduler.currentActor = null;
+			CompletableFuture<Object> future = new CompletableFuture<>();
+			return future;
+		}
+		if (this.savedMessages.isEmpty()) {
 			scheduler.currentActor = null;
 			this.next = new CompletableFuture<>();
 			return this.next;
 		} else {
-			return completedFuture(this.messages.poll());
+			return completedFuture(this.savedMessages.poll());
 		}
 	}
 
@@ -163,10 +229,10 @@ public abstract class Actor {
 		if (isStopped()) {
 			return;
 		}
-		messages.offer(message);
+		savedMessages.offer(message);
 		if (null != next && !next.isDone()) {
 			scheduler.currentActor = this;
-			this.next.complete(messages.poll());
+			this.next.complete(savedMessages.poll());
 		}
 	}
 
@@ -174,8 +240,52 @@ public abstract class Actor {
 		onReceive(AFTER_MESSAGE);
 	}
 
-	void onStart() {
+	CompletableFuture<Void> onStart() {
 		scheduler.currentActor = this;
-		internalRun();
+		stateRef.compareAndSet(ActorState.CREATED, ActorState.STARTED);
+		Object reason;
+		try {
+			reason = await(run());
+		} catch (Exception ex) {
+			reason = ex;
+		}
+		stateRef.compareAndSet(ActorState.STARTED, ActorState.STOPPED);
+		return onStop(reason);
+	}
+
+	CompletableFuture<Void> onStop(Object reason) {
+		scheduler.currentActor = null;
+
+		DownMessage downMessage = null;
+		for (Actor actor : this.monitors) {
+			actor.monitoredActors.remove(this);
+			if (downMessage == null) {
+				downMessage = new DownMessage(this, reason);
+			}
+			actor.send(downMessage);
+		}
+
+		ExitMessage exitMessage = null;
+		for (Actor actor : this.links) {
+			actor.links.remove(this);
+			if (actor.isTrapStop) {
+				if (exitMessage == null) {
+					exitMessage = new ExitMessage(this, reason);
+				}
+				actor.send(exitMessage);
+			} else {
+				await(actor.stop(reason));
+			}
+		}
+
+		for (Actor actor : this.monitoredActors) {
+			actor.monitors.remove(this);
+		}
+		this.savedMessages = null;
+		this.links.clear();
+		this.monitors.clear();
+		this.monitoredActors.clear();
+
+		return completedFuture(null);
 	}
 }

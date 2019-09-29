@@ -34,7 +34,11 @@ final class Scheduler {
 	}
 
 	public void start(Actor actor) {
-		this.executor.execute(actor::onStart);
+		this.executor.execute(new StartTask(actor));
+	}
+
+	public void stop(Actor actor, Object reason) {
+		this.executor.execute(new StopTask(actor, reason));
 	}
 
 	public ScheduledFuture<?> after(Actor actor, Receive receive) {
