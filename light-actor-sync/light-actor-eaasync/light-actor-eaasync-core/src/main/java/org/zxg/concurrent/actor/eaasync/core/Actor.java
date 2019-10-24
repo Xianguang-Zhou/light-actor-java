@@ -27,6 +27,7 @@ public abstract class Actor implements Comparable<Actor> {
 
 	private Scheduler scheduler;
 	private AtomicReference<ActorState> stateRef = new AtomicReference<>(ActorState.CREATED);
+	AtomicReference<String> nameRef = new AtomicReference<>();
 	private CompletableFuture<Object> next;
 	private Deque<Object> savedMessages = new LinkedList<>();
 	private Set<Actor> links = new ConcurrentSkipListSet<>();
@@ -138,6 +139,13 @@ public abstract class Actor implements Comparable<Actor> {
 
 	public final ActorGroup getGroup() {
 		return scheduler.group;
+	}
+
+	public final String getName() {
+		if (this.isStopped()) {
+			return null;
+		}
+		return nameRef.get();
 	}
 
 	public static Actor current() {
@@ -254,6 +262,18 @@ public abstract class Actor implements Comparable<Actor> {
 	}
 
 	CompletableFuture<Void> onStop(Object reason) {
+		String name = nameRef.get();
+		if (name != null) {
+			nameRef.set(null);
+			scheduler.group.registry.computeIfPresent(name, (String nameKey, Actor actorValue) -> {
+				if (actorValue == this) {
+					return null;
+				} else {
+					return actorValue;
+				}
+			});
+		}
+
 		scheduler.currentActor = null;
 
 		DownMessage downMessage = null;
