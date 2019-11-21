@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Xianguang Zhou <xianguang.zhou@outlook.com>. All rights reserved.
+ * Copyright (c) 2019, Xianguang Zhou <xianguang.zhou@outlook.com>. All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -14,29 +14,16 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.zxg.concurrent.actor.async.core;
+package org.zxg.concurrent.actor.eaasync.core.exception;
 
 /**
  * @author <a href="mailto:xianguang.zhou@outlook.com">Xianguang Zhou</a>
  */
-public final class DownMessage {
+public class ActorInterruptedException extends ActorException {
 
-	public final Actor from;
-	public final Object reason;
+	private static final long serialVersionUID = 1L;
 
-	DownMessage(Actor from, Object reason) {
-		this.from = from;
-		this.reason = reason;
-	}
-
-	@Override
-	public String toString() {
-		StringBuilder builder = new StringBuilder();
-		builder.append("DownMessage [from=");
-		builder.append(from);
-		builder.append(", reason=");
-		builder.append(reason);
-		builder.append("]");
-		return builder.toString();
+	public ActorInterruptedException(InterruptedException cause) {
+		super(cause);
 	}
 }
